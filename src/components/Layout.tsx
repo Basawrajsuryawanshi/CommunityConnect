@@ -1,15 +1,17 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Bell,
   Calendar,
   Home,
   LayoutGrid,
+  LogOut,
   MessageSquare,
   Search,
   Settings,
   Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 import { Avatar } from './Avatar'
 import { VerifiedBadge } from './Badge'
 
@@ -24,6 +26,13 @@ const navItems = [
 
 export function Layout() {
   const { user, community } = useApp()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -69,7 +78,13 @@ export function Layout() {
                 Batch {user.batch} · {user.jnv}
               </p>
             </div>
-            <Settings className="h-4 w-4 shrink-0 text-stone-400" />
+            <button
+              onClick={handleLogout}
+              className="shrink-0 p-1.5 rounded-lg hover:bg-stone-200 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4 text-stone-400" />
+            </button>
           </div>
         </div>
       </aside>
