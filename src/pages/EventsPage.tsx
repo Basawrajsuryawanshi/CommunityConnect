@@ -101,7 +101,7 @@ export function EventsPage() {
                 <div>
                   <h2 className="text-xl font-bold text-stone-900">Alumni Trekking Adventures</h2>
                   <p className="mt-1 max-w-xl text-sm text-stone-600">
-                    Browse trekking destinations across India — state-wise listings with rates.
+                    Browse trekking destinations across India  — state-wise listings with rates.
                     Select a trek, book your slot, pay securely, and get instant confirmation.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
