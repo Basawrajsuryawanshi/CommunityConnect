@@ -908,7 +908,7 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 
 ## 🆘 Need Help?
 
-If you get stuck:
+If you get stuck:	
 1. Check the error messages carefully
 2. Review the documentation
 3. Search StackOverflow
