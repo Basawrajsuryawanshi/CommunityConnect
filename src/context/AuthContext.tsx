@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
+import authService from '../services/authService'
 
 interface User {
   id: string
@@ -29,32 +30,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData))
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint
+      await authService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Continue with local logout even if API call fails
+    } finally {
+      // Clear local state
+      setUser(null)
+      localStorage.removeItem('user')
+    }
   }
 
   const loginWithGoogle = async () => {
-    // Simulate Google OAuth flow
-    // In production, you would use Firebase, Auth0, or similar
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        try {
-          // Mock Google user data
-          const googleUser = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: 'Google User',
-            email: 'user@gmail.com',
-            avatar: 'https://ui-avatars.com/api/?name=Google+User&background=4285F4&color=fff'
-          }
+    // This function expects a Google ID token from the Google Sign-In flow
+    // You'll need to integrate Google OAuth client library for this to work
+    // For now, this is a placeholder that throws an error
+    throw new Error('Google Sign-In integration requires Google OAuth client setup. Please implement the Google Sign-In flow and pass the idToken to authService.googleAuth(idToken)')
 
-          login(googleUser)
-          resolve()
-        } catch (error) {
-          reject(new Error('Google sign-in failed'))
-        }
-      }, 1500)
-    })
+    // Example implementation (uncomment when you have Google OAuth setup):
+    // const googleUser = await window.google.accounts.oauth2.initTokenClient({...})
+    // const idToken = googleUser.credential
+    // const response = await authService.googleAuth(idToken)
+    // login({
+    //   id: response.userId,
+    //   name: response.email.split('@')[0],
+    //   email: response.email,
+    //   avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=4285F4&color=fff`
+    // })
   }
 
   const isAuthenticated = !!user

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { UserPlus, Users, Mail, Lock, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import authService from '../services/authService'
 
 export function SignupPage() {
   const [formData, setFormData] = useState({
@@ -40,20 +41,20 @@ export function SignupPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call the .NET API register endpoint
+      const response = await authService.register(formData.email, formData.password)
 
-      // Create user account
+      // Update Auth Context with user data
       login({
-        id: Math.random().toString(36).substr(2, 9),
+        id: response.userId,
         name: formData.name,
-        email: formData.email,
+        email: response.email,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
       })
 
       navigate('/')
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
