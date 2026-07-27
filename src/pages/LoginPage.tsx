@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { LogIn, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import authService from '../services/authService'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -17,23 +18,34 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call the .NET API login endpoint
+      const response = await authService.login(email, password)
 
-      // Demo credentials - replace with actual authentication
-      if (email === 'demo@communityconnect.com' && password === 'demo123') {
+      // Fetch user profile from backend
+      try {
+        const userProfile = await authService.getUserProfile()
+
+        // Update Auth Context with real user data from backend
         login({
-          id: '1',
-          name: 'John Doe',
-          email: email,
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'
+          id: userProfile.userId,
+          name: userProfile.name,
+          email: userProfile.email,
+          avatar: userProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`
         })
-        navigate('/')
-      } else {
-        setError('Invalid email or password')
+      } catch (profileError) {
+        // If profile fetch fails, use basic data from login response
+        console.warn('Failed to fetch user profile:', profileError)
+        login({
+          id: response.userId,
+          name: response.email.split('@')[0],
+          email: response.email,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=random`
+        })
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+
+      navigate('/')
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
     }

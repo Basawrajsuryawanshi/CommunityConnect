@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { useAuth } from './AuthContext'
+import authService from '../services/authService'
 import {
   announcements as initialAnnouncements,
   community as initialCommunity,
@@ -46,7 +48,75 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user] = useState<CurrentUser>(initialUser)
+  const { user: authUser, isAuthenticated } = useAuth()
+
+  // Initialize user with data from localStorage or fallback to mock data
+  const [user, setUser] = useState<CurrentUser>(() => {
+    if (isAuthenticated && authUser) {
+      return {
+        id: authUser.id,
+        name: localStorage.getItem('userName') || authUser.name || 'User',
+        avatar: localStorage.getItem('userAvatar') || authUser.avatar || authUser.name.split(' ').map(n => n[0]).join(''),
+        role: (localStorage.getItem('userRole') as 'admin' | 'moderator' | 'member') || 'member',
+        batch: localStorage.getItem('userBatch') || '',
+        jnv: localStorage.getItem('userJnv') || '',
+      }
+    }
+    return initialUser
+  })
+
+  // Sync user data when authUser changes or on mount
+  useEffect(() => {
+    if (isAuthenticated && authUser) {
+      // Try to load from localStorage first
+      const storedName = localStorage.getItem('userName')
+      const storedBatch = localStorage.getItem('userBatch')
+      const storedJnv = localStorage.getItem('userJnv')
+      const storedRole = localStorage.getItem('userRole') as 'admin' | 'moderator' | 'member'
+      const storedAvatar = localStorage.getItem('userAvatar')
+
+      if (storedName && storedBatch && storedJnv) {
+        // We have complete profile data in localStorage
+        setUser({
+          id: authUser.id,
+          name: storedName,
+          avatar: storedAvatar || authUser.avatar || storedName.split(' ').map(n => n[0]).join(''),
+          role: storedRole || 'member',
+          batch: storedBatch,
+          jnv: storedJnv,
+        })
+      } else {
+        // Profile data not in localStorage, try to fetch from backend
+        authService.getUserProfile()
+          .then(profile => {
+            setUser({
+              id: profile.userId,
+              name: profile.name,
+              avatar: profile.avatar || authUser.avatar || profile.name.split(' ').map(n => n[0]).join(''),
+              role: profile.role,
+              batch: profile.batch,
+              jnv: profile.jnv,
+            })
+          })
+          .catch(error => {
+            console.warn('Failed to fetch user profile in AppContext:', error)
+            // Fallback to basic data from authUser
+            setUser({
+              id: authUser.id,
+              name: authUser.name,
+              avatar: authUser.avatar || authUser.name.split(' ').map(n => n[0]).join(''),
+              role: 'member',
+              batch: '',
+              jnv: '',
+            })
+          })
+      }
+    } else {
+      // User logged out, reset to mock data
+      setUser(initialUser)
+    }
+  }, [authUser, isAuthenticated])
+
   const [community] = useState<Community>(initialCommunity)
   const [members] = useState<Member[]>(initialMembers)
   const [events, setEvents] = useState<Event[]>(initialEvents)

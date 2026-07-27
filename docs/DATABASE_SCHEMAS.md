@@ -103,7 +103,7 @@ CREATE INDEX idx_loginattempts_date ON LoginAttempts(AttemptedAt);
 
 ---
 
-## 2. UserDB (PostgreSQL)
+## 2. UserDB ()
 
 ### Purpose
 Store user profile information, preferences, and member data.

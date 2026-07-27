@@ -7,7 +7,6 @@ import {
   LogOut,
   MessageSquare,
   Search,
-  Settings,
   Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
