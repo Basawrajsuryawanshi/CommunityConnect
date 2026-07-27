@@ -44,13 +44,27 @@ export function SignupPage() {
       // Call the .NET API register endpoint
       const response = await authService.register(formData.email, formData.password)
 
-      // Update Auth Context with user data
-      login({
-        id: response.userId,
-        name: formData.name,
-        email: response.email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
-      })
+      // Fetch user profile from backend
+      try {
+        const userProfile = await authService.getUserProfile()
+
+        // Update Auth Context with real user data from backend
+        login({
+          id: userProfile.userId,
+          name: userProfile.name,
+          email: userProfile.email,
+          avatar: userProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`
+        })
+      } catch (profileError) {
+        // If profile fetch fails, use form data
+        console.warn('Failed to fetch user profile:', profileError)
+        login({
+          id: response.userId,
+          name: formData.name,
+          email: response.email,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
+        })
+      }
 
       navigate('/')
     } catch (err: any) {

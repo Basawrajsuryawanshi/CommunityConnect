@@ -21,13 +21,27 @@ export function LoginPage() {
       // Call the .NET API login endpoint
       const response = await authService.login(email, password)
 
-      // Update Auth Context with user data
-      login({
-        id: response.userId,
-        name: response.email.split('@')[0], // Use email prefix as name for now
-        email: response.email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=random`
-      })
+      // Fetch user profile from backend
+      try {
+        const userProfile = await authService.getUserProfile()
+
+        // Update Auth Context with real user data from backend
+        login({
+          id: userProfile.userId,
+          name: userProfile.name,
+          email: userProfile.email,
+          avatar: userProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`
+        })
+      } catch (profileError) {
+        // If profile fetch fails, use basic data from login response
+        console.warn('Failed to fetch user profile:', profileError)
+        login({
+          id: response.userId,
+          name: response.email.split('@')[0],
+          email: response.email,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=random`
+        })
+      }
 
       navigate('/')
     } catch (err: any) {

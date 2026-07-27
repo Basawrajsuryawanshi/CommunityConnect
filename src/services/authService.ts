@@ -12,6 +12,20 @@ interface AuthResponse {
   expiresAt: string;
 }
 
+interface UserProfile {
+  userId: string;
+  email: string;
+  name: string;
+  batch: string;
+  jnv: string;
+  role: 'admin' | 'moderator' | 'member';
+  avatar?: string;
+  profession?: string;
+  company?: string;
+  city?: string;
+  bio?: string;
+}
+
 interface RegisterRequest {
   email: string;
   password: string;
@@ -168,6 +182,29 @@ class AuthService {
     }
   }
 
+  // Get user profile - Call this after login/register
+  async getUserProfile(): Promise<UserProfile> {
+    try {
+      const data = await this.makeAuthenticatedRequest<UserProfile>('/api/user/profile', {
+        method: 'GET',
+      });
+
+      // Save user profile data to localStorage
+      if (data.name) localStorage.setItem('userName', data.name);
+      if (data.batch) localStorage.setItem('userBatch', data.batch);
+      if (data.jnv) localStorage.setItem('userJnv', data.jnv);
+      if (data.role) localStorage.setItem('userRole', data.role);
+      if (data.avatar) localStorage.setItem('userAvatar', data.avatar);
+
+      return data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to fetch user profile: ${error.message}`);
+      }
+      throw new Error('Failed to fetch user profile');
+    }
+  }
+
   // Logout user
   async logout(): Promise<{ success: boolean; message: string }> {
     try {
@@ -226,6 +263,12 @@ class AuthService {
     localStorage.removeItem('userId');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('tokenExpiresAt');
+    // Clear user profile data
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userBatch');
+    localStorage.removeItem('userJnv');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userAvatar');
   }
 
   // Helper method: Get access token
@@ -312,3 +355,6 @@ class AuthService {
 // Export singleton instance
 const authService = new AuthService();
 export default authService;
+
+// Export types for use in other files
+export type { UserProfile, AuthResponse };
