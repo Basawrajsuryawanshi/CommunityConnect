@@ -1,71 +1,58 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import authService from '../services/authService'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
-}
+import { getLandingRoute, hasPermission as checkPermission } from '../auth/auth'
+import type { AuthUser, Permission } from '../auth/auth'
 
 interface AuthContextType {
-  user: User | null
-  login: (user: User) => void
-  logout: () => void
+  user: AuthUser | null
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
   isAuthenticated: boolean
+  hasPermission: (permission: Permission, options?: { communityId?: string; eventId?: string }) => boolean
+  getDefaultLandingRoute: () => string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user')
-    return storedUser ? JSON.parse(storedUser) : null
-  })
+  const [user, setUser] = useState<AuthUser | null>(() => authService.loadUser())
 
-  const login = (userData: User) => {
-    setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
+  useEffect(() => {
+    const storedUser = authService.loadUser()
+    if (storedUser) {
+      setUser(storedUser)
+    }
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    const response = await authService.login(email, password)
+    setUser(response.user)
   }
 
   const logout = async () => {
-    try {
-      // Call backend logout endpoint
-      await authService.logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Continue with local logout even if API call fails
-    } finally {
-      // Clear local state
-      setUser(null)
-      localStorage.removeItem('user')
-    }
+    await authService.logout()
+    setUser(null)
   }
 
   const loginWithGoogle = async () => {
-    // This function expects a Google ID token from the Google Sign-In flow
-    // You'll need to integrate Google OAuth client library for this to work
-    // For now, this is a placeholder that throws an error
-    throw new Error('Google Sign-In integration requires Google OAuth client setup. Please implement the Google Sign-In flow and pass the idToken to authService.googleAuth(idToken)')
-
-    // Example implementation (uncomment when you have Google OAuth setup):
-    // const googleUser = await window.google.accounts.oauth2.initTokenClient({...})
-    // const idToken = googleUser.credential
-    // const response = await authService.googleAuth(idToken)
-    // login({
-    //   id: response.userId,
-    //   name: response.email.split('@')[0],
-    //   email: response.email,
-    //   avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=4285F4&color=fff`
-    // })
+    throw new Error('Google Sign-In is not supported in mock mode.')
   }
 
-  const isAuthenticated = !!user
+  const hasPermission = (permission: Permission, options?: { communityId?: string; eventId?: string }) => {
+    if (!user) return false
+    return checkPermission(user.permissions, permission, options)
+  }
+
+  const getDefaultLandingRoute = () => {
+    if (!user) return '/login'
+    return getLandingRoute(user)
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loginWithGoogle, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, loginWithGoogle, isAuthenticated: !!user, hasPermission, getDefaultLandingRoute }}
+    >
       {children}
     </AuthContext.Provider>
   )

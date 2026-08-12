@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { useAuth } from './AuthContext'
 import authService from '../services/authService'
 import {
+  adminRoles as initialAdminRoles,
+  adminUsers as initialAdminUsers,
   announcements as initialAnnouncements,
   community as initialCommunity,
   currentUser as initialUser,
@@ -11,12 +13,15 @@ import {
 } from '../data/mockData'
 import { generateBookingId, treks as initialTreks } from '../data/trekkingData'
 import type {
+  AdminRole,
+  AdminUser,
   Announcement,
   Community,
   CurrentUser,
   Discussion,
   Event,
   Member,
+  MemberRole,
   Reply,
   RsvpStatus,
 } from '../types'
@@ -38,11 +43,23 @@ interface AppContextValue {
   trekBookings: TrekBooking[]
   announcements: Announcement[]
   discussions: Discussion[]
+  adminUsers: AdminUser[]
+  adminRoles: AdminRole[]
   updateRsvp: (eventId: string, status: RsvpStatus) => void
   bookTrek: (params: BookTrekParams) => TrekBooking | null
   toggleDiscussionLike: (discussionId: string) => void
   addReply: (discussionId: string, content: string) => void
   addDiscussion: (title: string, content: string, tags: string[]) => void
+  addAdminUser: (user: AdminUser) => void
+  updateAdminUser: (user: AdminUser) => void
+  deleteAdminUser: (userId: string) => void
+  addAdminRole: (role: AdminRole) => void
+  updateAdminRole: (role: AdminRole) => void
+  deleteAdminRole: (roleId: string) => void
+  createEvent: (event: Event) => void
+  updateEvent: (event: Event) => void
+  deleteEvent: (eventId: string) => void
+  updateMemberRole: (memberId: string, role: MemberRole) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -54,12 +71,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser>(() => {
     if (isAuthenticated && authUser) {
       return {
-        id: authUser.id,
-        name: localStorage.getItem('userName') || authUser.name || 'User',
-        avatar: localStorage.getItem('userAvatar') || authUser.avatar || authUser.name.split(' ').map(n => n[0]).join(''),
-        role: (localStorage.getItem('userRole') as 'admin' | 'moderator' | 'member') || 'member',
-        batch: localStorage.getItem('userBatch') || '',
-        jnv: localStorage.getItem('userJnv') || '',
+        id: authUser.userId,
+        name: authUser.name,
+        avatar: authUser.avatar || authUser.name.split(' ').map((n) => n[0]).join(''),
+        role: authUser.assignments.some((assignment) => assignment.role !== 'Member') ? 'admin' : 'member',
+        batch: authUser.batch,
+        jnv: authUser.jnv,
       }
     }
     return initialUser
@@ -78,9 +95,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (storedName && storedBatch && storedJnv) {
         // We have complete profile data in localStorage
         setUser({
-          id: authUser.id,
+          id: authUser.userId,
           name: storedName,
-          avatar: storedAvatar || authUser.avatar || storedName.split(' ').map(n => n[0]).join(''),
+          avatar: storedAvatar || authUser.avatar || storedName.split(' ').map((n) => n[0]).join(''),
           role: storedRole || 'member',
           batch: storedBatch,
           jnv: storedJnv,
@@ -88,23 +105,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         // Profile data not in localStorage, try to fetch from backend
         authService.getUserProfile()
-          .then(profile => {
+          .then((profile) => {
             setUser({
               id: profile.userId,
               name: profile.name,
-              avatar: profile.avatar || authUser.avatar || profile.name.split(' ').map(n => n[0]).join(''),
-              role: profile.role,
+              avatar: profile.avatar || authUser.avatar || profile.name.split(' ').map((n) => n[0]).join(''),
+              role: profile.assignments.some((assignment) => assignment.role !== 'Member') ? 'admin' : 'member',
               batch: profile.batch,
               jnv: profile.jnv,
             })
           })
-          .catch(error => {
+          .catch((error) => {
             console.warn('Failed to fetch user profile in AppContext:', error)
             // Fallback to basic data from authUser
             setUser({
-              id: authUser.id,
+              id: authUser.userId,
               name: authUser.name,
-              avatar: authUser.avatar || authUser.name.split(' ').map(n => n[0]).join(''),
+              avatar: authUser.avatar || authUser.name.split(' ').map((n) => n[0]).join(''),
               role: 'member',
               batch: '',
               jnv: '',
@@ -117,13 +134,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser, isAuthenticated])
 
+  const loadLocalData = <T,>(key: string, fallback: T): T => {
+    if (typeof window === 'undefined') return fallback
+    const stored = localStorage.getItem(key)
+    if (!stored) return fallback
+    try {
+      return JSON.parse(stored) as T
+    } catch {
+      return fallback
+    }
+  }
+
   const [community] = useState<Community>(initialCommunity)
-  const [members] = useState<Member[]>(initialMembers)
-  const [events, setEvents] = useState<Event[]>(initialEvents)
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => loadLocalData('cc-admin-users', initialAdminUsers))
+  const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => loadLocalData('cc-admin-roles', initialAdminRoles))
+  const [members, setMembers] = useState<Member[]>(() => loadLocalData('cc-members', initialMembers))
+  const [events, setEvents] = useState<Event[]>(() => loadLocalData('cc-events', initialEvents))
   const [treks, setTreks] = useState<Trek[]>(initialTreks)
   const [trekBookings, setTrekBookings] = useState<TrekBooking[]>([])
   const [announcements] = useState<Announcement[]>(initialAnnouncements)
   const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions)
+
+  useEffect(() => {
+    localStorage.setItem('cc-admin-users', JSON.stringify(adminUsers))
+  }, [adminUsers])
+
+  useEffect(() => {
+    localStorage.setItem('cc-admin-roles', JSON.stringify(adminRoles))
+  }, [adminRoles])
+
+  useEffect(() => {
+    localStorage.setItem('cc-members', JSON.stringify(members))
+  }, [members])
+
+  useEffect(() => {
+    localStorage.setItem('cc-events', JSON.stringify(events))
+  }, [events])
+
+  const addAdminUser = (user: AdminUser) => {
+    setAdminUsers((prev) => [user, ...prev])
+  }
+
+  const updateAdminUser = (user: AdminUser) => {
+    setAdminUsers((prev) => prev.map((item) => (item.id === user.id ? user : item)))
+  }
+
+  const deleteAdminUser = (userId: string) => {
+    setAdminUsers((prev) => prev.filter((item) => item.id !== userId))
+  }
+
+  const addAdminRole = (role: AdminRole) => {
+    setAdminRoles((prev) => [role, ...prev])
+  }
+
+  const updateAdminRole = (role: AdminRole) => {
+    setAdminRoles((prev) => prev.map((item) => (item.id === role.id ? role : item)))
+  }
+
+  const deleteAdminRole = (roleId: string) => {
+    setAdminRoles((prev) => prev.filter((item) => item.id !== roleId))
+  }
+
+  const createEvent = (event: Event) => {
+    setEvents((prev) => [event, ...prev])
+  }
+
+  const updateEvent = (event: Event) => {
+    setEvents((prev) => prev.map((item) => (item.id === event.id ? event : item)))
+  }
+
+  const deleteEvent = (eventId: string) => {
+    setEvents((prev) => prev.filter((item) => item.id !== eventId))
+  }
+
+  const updateMemberRole = (memberId: string, role: MemberRole) => {
+    setMembers((prev) => prev.map((member) => (member.id === memberId ? { ...member, role } : member)))
+  }
 
   const updateRsvp = (eventId: string, status: RsvpStatus) => {
     setEvents((prev) =>
@@ -235,11 +321,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         trekBookings,
         announcements,
         discussions,
+        adminUsers,
+        adminRoles,
         updateRsvp,
         bookTrek,
         toggleDiscussionLike,
         addReply,
         addDiscussion,
+        addAdminUser,
+        updateAdminUser,
+        deleteAdminUser,
+        addAdminRole,
+        updateAdminRole,
+        deleteAdminRole,
+        createEvent,
+        updateEvent,
+        deleteEvent,
+        updateMemberRole,
       }}
     >
       {children}

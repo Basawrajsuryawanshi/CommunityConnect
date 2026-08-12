@@ -1,4 +1,63 @@
-import type { Announcement, Community, CurrentUser, Discussion, Event, Member } from '../types'
+import type { Announcement, AdminRole, AdminUser, Community, CurrentUser, Discussion, Event, Member } from '../types'
+
+export const adminUsers: AdminUser[] = [
+  {
+    id: 'u-superadmin',
+    name: 'Super Admin',
+    email: 'superadmin@communityconnect.local',
+    role: 'SuperAdmin',
+    batch: '1990',
+    jnv: 'Head Office',
+    profession: 'Platform Lead',
+    company: 'CommunityConnect',
+    city: 'Bangalore',
+  },
+  {
+    id: 'u-communityadmin',
+    name: 'Community Admin',
+    email: 'communityadmin@communityconnect.local',
+    role: 'CommunityAdmin',
+    batch: '2005',
+    jnv: 'JNV Alumni',
+    profession: 'Community Manager',
+    company: 'JNV Alumni Network',
+    city: 'Mumbai',
+  },
+  {
+    id: 'u-organizer',
+    name: 'Event Organizer',
+    email: 'organizer@communityconnect.local',
+    role: 'EventOrganizer',
+    batch: '2010',
+    jnv: 'JNV Alumni',
+    profession: 'Event Lead',
+    company: 'Community Events',
+    city: 'Delhi',
+  },
+]
+
+export const adminRoles: AdminRole[] = [
+  {
+    id: 'r-superadmin',
+    name: 'SuperAdmin',
+    description: 'Full platform access, user and role management, and all high-level permissions.',
+  },
+  {
+    id: 'r-communityadmin',
+    name: 'CommunityAdmin',
+    description: 'Community-level management permissions for members, events, and announcements.',
+  },
+  {
+    id: 'r-eventorganizer',
+    name: 'EventOrganizer',
+    description: 'Event creation and bookings management permissions for event organizers.',
+  },
+  {
+    id: 'r-member',
+    name: 'Member',
+    description: 'Standard community member access to view events, discussions, and announcements.',
+  },
+]
 
 export const currentUser: CurrentUser = {
   id: 'u1',
