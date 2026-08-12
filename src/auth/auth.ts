@@ -6,7 +6,7 @@ export const PERMISSIONS = {
   USERS_VIEW: 'users.view',
   ROLES_VIEW: 'roles.view',
   PERMISSIONS_VIEW: 'permissions.view',
-  COMMUNITIES_VIEW: 'communities.view',
+  COMMUNITIES_VIEW: 'communities.view', 
   EVENTS_VIEW: 'events.view',
   ANNOUNCEMENTS_VIEW: 'announcements.view',
   DISCUSSIONS_VIEW: 'discussions.view',

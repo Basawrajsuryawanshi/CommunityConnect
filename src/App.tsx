@@ -30,6 +30,8 @@ import { OrganizerBookingsPage } from './pages/OrganizerBookingsPage'
 import { OrganizerSettingsPage } from './pages/OrganizerSettingsPage'
 import { CommunitySettingsPage } from './pages/CommunitySettingsPage'
 import { PERMISSIONS } from './auth/auth'
+import { AdminCommunitiesPage } from './pages/AdminCommunitiesPage'
+import { AdminSettingsPage } from './pages/AdminSettingsPage'
 
 export default function App() {
   return (
@@ -49,6 +51,24 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
+               <Route
+                path="communities"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.COMMUNITIES_VIEW}>
+                    <AdminCommunitiesPage />
+                  </PermissionRoute>
+                }
+
+              />
+                <Route
+                path="settings"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.SETTINGS_VIEW}>
+                    <AdminSettingsPage />
+                  </PermissionRoute>
+                }
+
+              />
               <Route
                 path="dashboard"
                 element={
@@ -183,8 +203,11 @@ export default function App() {
                   </PermissionRoute>
                 }
               />
+             
               <Route path="" element={<Navigate to="dashboard" replace />} />
             </Route>
+
+
 
             <Route
               element={

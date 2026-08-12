@@ -10,8 +10,8 @@ const navItems = [
   { to: '/admin/users', icon: Users, label: 'Users', permission: PERMISSIONS.USERS_VIEW },
   { to: '/admin/roles', icon: ShieldCheck, label: 'Roles', permission: PERMISSIONS.ROLES_VIEW },
   { to: '/admin/permissions', icon: LayoutGrid, label: 'Permissions', permission: PERMISSIONS.PERMISSIONS_VIEW },
-  { to: '/admin', icon: FileText, label: 'Communities', permission: PERMISSIONS.COMMUNITIES_VIEW },
-  { to: '/admin/dashboard', icon: Settings, label: 'Settings', permission: PERMISSIONS.SETTINGS_VIEW },
+  { to: '/admin/communities', icon: FileText, label: 'Communities', permission: PERMISSIONS.COMMUNITIES_VIEW },
+  { to: '/admin/settings', icon: Settings, label: 'Settings', permission: PERMISSIONS.SETTINGS_VIEW }, 
 ]
 
 export function AdminLayout() {
