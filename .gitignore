@@ -121,3 +121,4 @@ dist-ssr/
 *.njsproj
 *.sw?
 *.local
+/.vs/slnx.sqlite

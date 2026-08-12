@@ -16,12 +16,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => authService.loadUser())
+  const [user, setUser] = useState<AuthUser | null>(null)
 
   useEffect(() => {
-    const storedUser = authService.loadUser()
-    if (storedUser) {
-      setUser(storedUser)
+    // Load user from localStorage after component mounts
+    try {
+      const storedUser = authService.loadUser()
+      if (storedUser) {
+        setUser(storedUser)
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
     }
   }, [])
 
