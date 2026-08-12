@@ -196,17 +196,24 @@ export function SignupPage() {
     setIsLoading(true)
 
     try {
-      /*
-       * Current authService.register() from your existing code
-       * accepts email and password.
-       *
-       * Email is optional in this new form.
-       *
-       * If your backend requires email, you should update the
-       * backend/service accordingly.
-       */
+      // Prepare registration data with backend field names (PascalCase)
+      const registerData = {
+        Email: formData.email,
+        Password: formData.password,
+        FullName: formData.name,
+        MobileNumber: formData.mobileNumber,
+        SchoolName: formData.schoolName,
+        State: formData.state,
+        SchoolRegion: formData.schoolRegion,
+        PassoutYear: Number(formData.passoutYear),
+        Role: formData.role,
+        University: formData.university,
+        CurrentState: formData.currentState,
+        CurrentDistrict: formData.currentDistrict,
+        BloodGroup: formData.bloodGroup
+      }
 
-      await authService.register(formData.email, formData.password)
+      await authService.register(registerData)
       await login(formData.email, formData.password)
       const landing = getDefaultLandingRoute()
       navigate(landing)

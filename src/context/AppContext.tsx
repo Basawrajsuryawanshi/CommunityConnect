@@ -135,10 +135,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [authUser, isAuthenticated])
 
   const loadLocalData = <T,>(key: string, fallback: T): T => {
-    if (typeof window === 'undefined') return fallback
-    const stored = localStorage.getItem(key)
-    if (!stored) return fallback
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return fallback
     try {
+      const stored = localStorage.getItem(key)
+      if (!stored) return fallback
       return JSON.parse(stored) as T
     } catch {
       return fallback
@@ -146,29 +146,99 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const [community] = useState<Community>(initialCommunity)
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => loadLocalData('cc-admin-users', initialAdminUsers))
-  const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => loadLocalData('cc-admin-roles', initialAdminRoles))
-  const [members, setMembers] = useState<Member[]>(() => loadLocalData('cc-members', initialMembers))
-  const [events, setEvents] = useState<Event[]>(() => loadLocalData('cc-events', initialEvents))
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(initialAdminUsers)
+  const [adminRoles, setAdminRoles] = useState<AdminRole[]>(initialAdminRoles)
+  const [members, setMembers] = useState<Member[]>(initialMembers)
+  const [events, setEvents] = useState<Event[]>(initialEvents)
   const [treks, setTreks] = useState<Trek[]>(initialTreks)
   const [trekBookings, setTrekBookings] = useState<TrekBooking[]>([])
   const [announcements] = useState<Announcement[]>(initialAnnouncements)
   const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions)
 
+  // Load data from localStorage after component mounts
   useEffect(() => {
-    localStorage.setItem('cc-admin-users', JSON.stringify(adminUsers))
+    try {
+      const loadedAdminUsers = loadLocalData('cc-admin-users', initialAdminUsers)
+      if (loadedAdminUsers !== initialAdminUsers) {
+        setAdminUsers(loadedAdminUsers)
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const loadedAdminRoles = loadLocalData('cc-admin-roles', initialAdminRoles)
+      if (loadedAdminRoles !== initialAdminRoles) {
+        setAdminRoles(loadedAdminRoles)
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const loadedMembers = loadLocalData('cc-members', initialMembers)
+      if (loadedMembers !== initialMembers) {
+        setMembers(loadedMembers)
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const loadedEvents = loadLocalData('cc-events', initialEvents)
+      if (loadedEvents !== initialEvents) {
+        setEvents(loadedEvents)
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
+  }, [])
+
+  // Persist data to localStorage when it changes
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('cc-admin-users', JSON.stringify(adminUsers))
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
   }, [adminUsers])
 
   useEffect(() => {
-    localStorage.setItem('cc-admin-roles', JSON.stringify(adminRoles))
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('cc-admin-roles', JSON.stringify(adminRoles))
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
   }, [adminRoles])
 
   useEffect(() => {
-    localStorage.setItem('cc-members', JSON.stringify(members))
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('cc-members', JSON.stringify(members))
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
   }, [members])
 
   useEffect(() => {
-    localStorage.setItem('cc-events', JSON.stringify(events))
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('cc-events', JSON.stringify(events))
+      }
+    } catch (error) {
+      // Silently handle localStorage access errors
+    }
   }, [events])
 
   const addAdminUser = (user: AdminUser) => {
