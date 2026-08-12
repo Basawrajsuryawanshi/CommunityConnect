@@ -32,6 +32,7 @@ import { CommunitySettingsPage } from './pages/CommunitySettingsPage'
 import { PERMISSIONS } from './auth/auth'
 import { AdminCommunitiesPage } from './pages/AdminCommunitiesPage'
 import { AdminSettingsPage } from './pages/AdminSettingsPage'
+import { CommunityReportsPage } from './pages/CommunityReportsPage'
 
 export default function App() {
   return (
@@ -51,7 +52,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-               <Route
+              <Route
                 path="communities"
                 element={
                   <PermissionRoute permission={PERMISSIONS.COMMUNITIES_VIEW}>
@@ -60,7 +61,7 @@ export default function App() {
                 }
 
               />
-                <Route
+              <Route
                 path="settings"
                 element={
                   <PermissionRoute permission={PERMISSIONS.SETTINGS_VIEW}>
@@ -104,7 +105,7 @@ export default function App() {
               <Route path="" element={<Navigate to="dashboard" replace />} />
             </Route>
 
-            <Route
+            {/* <Route
               path="/community/:communityId/*"
               element={
                 <ProtectedRoute>
@@ -153,8 +154,107 @@ export default function App() {
                 }
               />
               <Route path="" element={<Navigate to="dashboard" replace />} />
-            </Route>
+            </Route> */}
 
+            <Route
+              path="/community/:communityId/*"
+              element={
+                <ProtectedRoute>
+                  <CommunityLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Dashboard */}
+              <Route
+                path="dashboard"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.COMMUNITY_DASHBOARD_VIEW}
+                  >
+                    <CommunityDashboardPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Members */}
+              <Route
+                path="members"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.COMMUNITY_MEMBERS_VIEW}
+                  >
+                    <MembersPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Events */}
+              <Route
+                path="events"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.COMMUNITY_EVENTS_VIEW}
+                  >
+                    <EventsPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Announcements */}
+              <Route
+                path="announcements"
+                element={
+                  <PermissionRoute
+                    permission={
+                      PERMISSIONS.COMMUNITY_ANNOUNCEMENTS_MANAGE
+                    }
+                  >
+                    <AnnouncementsPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Discussions */}
+              <Route
+                path="discussions"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.DISCUSSIONS_VIEW}
+                  >
+                    <DiscussionsPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Reports */}
+              <Route
+                path="reports"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.REPORTS_VIEW}
+                  >
+                    <CommunityReportsPage />
+                  </PermissionRoute>
+                }
+              />
+
+              {/* Settings */}
+              <Route
+                path="settings"
+                element={
+                  <PermissionRoute
+                    permission={PERMISSIONS.SETTINGS_VIEW}
+                  >
+                    <CommunitySettingsPage />
+                  </PermissionRoute>
+                }
+              />
+
+              <Route
+                path=""
+                element={<Navigate to="dashboard" replace />}
+              />
+            </Route>
             <Route
               path="/organizer/*"
               element={
@@ -203,7 +303,7 @@ export default function App() {
                   </PermissionRoute>
                 }
               />
-             
+
               <Route path="" element={<Navigate to="dashboard" replace />} />
             </Route>
 
