@@ -1,6 +1,24 @@
 export type RsvpStatus = 'going' | 'maybe' | 'not_going' | null
 
-export type MemberRole = 'admin' | 'moderator' | 'member'
+export type MemberRole = 'admin' | 'moderator' | 'member' | 'eventorganizer'
+
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  batch: string
+  jnv: string
+  profession: string
+  company: string
+  city: string
+}
+
+export interface AdminRole {
+  id: string
+  name: string
+  description: string
+}
 
 export interface Community {
   id: string

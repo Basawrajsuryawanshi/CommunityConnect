@@ -2,14 +2,13 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { LogIn, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import authService from '../services/authService'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, getDefaultLandingRoute } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,32 +17,8 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Call the .NET API login endpoint
-      const response = await authService.login(email, password)
-
-      // Fetch user profile from backend
-      try {
-        const userProfile = await authService.getUserProfile()
-
-        // Update Auth Context with real user data from backend
-        login({
-          id: userProfile.userId,
-          name: userProfile.name,
-          email: userProfile.email,
-          avatar: userProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`
-        })
-      } catch (profileError) {
-        // If profile fetch fails, use basic data from login response
-        console.warn('Failed to fetch user profile:', profileError)
-        login({
-          id: response.userId,
-          name: response.email.split('@')[0],
-          email: response.email,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.email)}&background=random`
-        })
-      }
-
-      navigate('/')
+      await login(email, password)
+      navigate(getDefaultLandingRoute())
     } catch (err: any) {
       setError(err.message || 'Invalid email or password')
     } finally {
@@ -57,7 +32,7 @@ export function LoginPage() {
 
     try {
       await loginWithGoogle()
-      navigate('/')
+      navigate(getDefaultLandingRoute())
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google')
     } finally {
@@ -190,9 +165,11 @@ export function LoginPage() {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
-            <p className="text-sm text-blue-700">Email: demo@communityconnect.com</p>
-            <p className="text-sm text-blue-700">Password: demo123</p>
+            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials (mock users):</p>
+            <p className="text-sm text-blue-700">superadmin@communityconnect.local / DevPass123!</p>
+            <p className="text-sm text-blue-700">communityadmin@communityconnect.local / DevPass123!</p>
+            <p className="text-sm text-blue-700">organizer@communityconnect.local / DevPass123!</p>
+            <p className="text-sm text-blue-700">member@communityconnect.local / DevPass123!</p>
           </div>
 
           {/* Sign Up Link */}

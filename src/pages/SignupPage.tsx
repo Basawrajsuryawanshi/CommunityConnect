@@ -37,7 +37,7 @@ export function SignupPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login, loginWithGoogle } = useAuth()
+  const { login, getDefaultLandingRoute } = useAuth()
   const navigate = useNavigate()
 
   // --------------------------------------------------
@@ -206,65 +206,13 @@ export function SignupPage() {
        * backend/service accordingly.
        */
 
-      const response = await authService.register(
-        formData.email,
-        formData.password
-      )
-
-      // Fetch user profile from backend
-      try {
-        const userProfile = await authService.getUserProfile()
-
-        login({
-          id: userProfile.userId,
-          name: userProfile.name || formData.name,
-          email: userProfile.email || formData.email,
-          avatar:
-            userProfile.avatar ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              formData.name
-            )}&background=random`
-        })
-      } catch (profileError) {
-        console.warn(
-          'Failed to fetch user profile:',
-          profileError
-        )
-
-        login({
-          id: response.userId,
-          name: formData.name,
-          email: formData.email,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            formData.name
-          )}&background=random`
-        })
-      }
-
-      navigate('/')
+      await authService.register(formData.email, formData.password)
+      await login(formData.email, formData.password)
+      const landing = getDefaultLandingRoute()
+      navigate(landing)
     } catch (err: any) {
       setError(
         err.message || 'An error occurred. Please try again.'
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // --------------------------------------------------
-  // Google Signup
-  // --------------------------------------------------
-
-  const handleGoogleSignup = async () => {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      await loginWithGoogle()
-      navigate('/')
-    } catch (err: any) {
-      setError(
-        err.message || 'Failed to sign up with Google'
       )
     } finally {
       setIsLoading(false)
