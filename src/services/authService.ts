@@ -42,17 +42,42 @@ class AuthService {
 
       const data = await response.json()
 
+      console.log('Login API Response:', data)
+
+      // Backend only returns userId, email, and tokens
+      // Fetch the full user profile from /api/Users/{id}
+      let userProfile = null
+
+      try {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/Users/${data.userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (profileResponse.ok) {
+          userProfile = await profileResponse.json()
+          console.log('User Profile Response:', userProfile)
+        } else {
+          console.warn('Failed to fetch user profile, status:', profileResponse.status)
+        }
+      } catch (error) {
+        console.warn('Failed to fetch user profile:', error)
+      }
+
       // Transform backend response to match frontend AuthResponse format
       const authResponse: AuthResponse = {
         user: {
           userId: data.userId?.toString() || '',
           email: data.email || email,
-          name: '', // Backend doesn't provide this on login
-          avatar: '', // Backend doesn't provide this on login
-          batch: '', // Backend doesn't provide this on login
-          jnv: '', // Backend doesn't provide this on login
-          assignments: [], // Backend doesn't provide this on login
-          permissions: [] // Backend doesn't provide this on login
+          name: userProfile?.fullName || userProfile?.name || email.split('@')[0], // Use email prefix as fallback
+          avatar: userProfile?.avatar || userProfile?.profilePicture || '', 
+          batch: userProfile?.passoutYear?.toString() || userProfile?.batch || '', 
+          jnv: userProfile?.schoolName || userProfile?.jnv || '', 
+          assignments: userProfile?.assignments || [], 
+          permissions: userProfile?.permissions || [] 
         },
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
