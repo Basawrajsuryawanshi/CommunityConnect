@@ -6,7 +6,7 @@ const LOCAL_ACCESS_TOKEN = 'cc_access_token'
 const LOCAL_REFRESH_TOKEN = 'cc_refresh_token'
 const LOCAL_TOKEN_EXPIRES = 'cc_access_token_expires_at'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7232'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://communityconnectapi-dev.eba-qdb3dqik.ap-south-1.elasticbeanstalk.com'
 
 interface RegisterData {
   Email: string
