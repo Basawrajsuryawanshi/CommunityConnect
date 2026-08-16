@@ -49,18 +49,19 @@ export function EventTypeBadge({
   )
 }
 
-export function RoleBadge({ role }: { role: 'admin' | 'moderator' | 'member' }) {
+export function RoleBadge({ role }: { role: 'admin' | 'moderator' | 'member' | 'eventorganizer' }) {
   if (role === 'member') return null
 
   const styles = {
     admin: 'bg-emerald-100 text-emerald-800',
     moderator: 'bg-sky-100 text-sky-800',
+    eventorganizer: 'bg-purple-100 text-purple-800',
     member: '',
   }
 
   return (
     <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${styles[role]}`}>
-      {role}
+      {role === 'eventorganizer' ? 'Event Organizer' : role}
     </span>
   )
 }
