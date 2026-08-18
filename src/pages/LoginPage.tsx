@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { LogIn, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getLandingRoute } from '../auth/auth'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -17,8 +18,9 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      navigate(getDefaultLandingRoute())
+      const user = await login(email, password)
+      const route = getLandingRoute(user)
+      navigate(route)
     } catch (err: any) {
       setError(err.message || 'Invalid email or password')
     } finally {

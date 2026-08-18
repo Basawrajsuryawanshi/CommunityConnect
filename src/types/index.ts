@@ -4,14 +4,20 @@ export type MemberRole = 'admin' | 'moderator' | 'member' | 'eventorganizer'
 
 export interface AdminUser {
   id: string
-  name: string
+  fullName: string
   email: string
+  mobileNumber: string
+  schoolName: string
+  state: string
+  schoolRegion: string
+  passoutYear: number
   role: string
-  batch: string
-  jnv: string
-  profession: string
-  company: string
-  city: string
+  university: string
+  currentState: string
+  currentDistrict: string
+  bloodGroup: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AdminRole {

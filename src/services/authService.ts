@@ -1,5 +1,5 @@
-import { findMockUser, buildAuthResponse } from '../auth/mockAuth'
-import type { AuthResponse, AuthUser } from '../auth/auth'
+import type { AuthResponse, AuthUser, RoleName, RoleAssignment } from '../auth/auth'
+import { buildPermissionGrants } from '../auth/auth'
 
 const LOCAL_USER_KEY = 'cc_auth_user'
 const LOCAL_ACCESS_TOKEN = 'cc_access_token'
@@ -7,6 +7,29 @@ const LOCAL_REFRESH_TOKEN = 'cc_refresh_token'
 const LOCAL_TOKEN_EXPIRES = 'cc_access_token_expires_at'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://communityconnectapi-dev.eba-qdb3dqik.ap-south-1.elasticbeanstalk.com'
+
+// Map backend role string to frontend RoleName
+function mapBackendRoleToFrontend(backendRole: string): RoleName {
+  const roleMap: Record<string, RoleName> = {
+    'Admin': 'SuperAdmin',
+    'SuperAdmin': 'SuperAdmin',
+    'CommunityAdmin': 'CommunityAdmin',
+    'EventOrganizer': 'EventOrganizer',
+    'Member': 'Member',
+  }
+  return roleMap[backendRole] || 'Member' // Default to Member if unknown
+}
+
+// Create role assignments from backend role
+function createRoleAssignments(backendRole: string): RoleAssignment[] {
+  const frontendRole = mapBackendRoleToFrontend(backendRole)
+  return [{
+    role: frontendRole,
+    scopeType: frontendRole === 'SuperAdmin' || frontendRole === 'Member' ? 'GLOBAL' : 
+                frontendRole === 'CommunityAdmin' ? 'COMMUNITY' : 'EVENT',
+    scopeId: undefined
+  }]
+}
 
 interface RegisterData {
   Email: string
@@ -68,16 +91,24 @@ class AuthService {
       }
 
       // Transform backend response to match frontend AuthResponse format
+      // Backend returns: fullName, passoutYear, schoolName, role
+      const assignments = userProfile?.role ? createRoleAssignments(userProfile.role) : []
+      const permissions = buildPermissionGrants(assignments)
+
+      console.log('🔐 Debug - Backend role:', userProfile?.role)
+      console.log('🔐 Debug - Assignments:', assignments)
+      console.log('🔐 Debug - Permissions built:', permissions)
+
       const authResponse: AuthResponse = {
         user: {
           userId: data.userId?.toString() || '',
-          email: data.email || email,
-          name: userProfile?.fullName || userProfile?.name || email.split('@')[0], // Use email prefix as fallback
+          email: data.email || userProfile?.emailID || email,
+          name: userProfile?.fullName || email.split('@')[0], // Use fullName from backend
           avatar: userProfile?.avatar || userProfile?.profilePicture || '', 
-          batch: userProfile?.passoutYear?.toString() || userProfile?.batch || '', 
-          jnv: userProfile?.schoolName || userProfile?.jnv || '', 
-          assignments: userProfile?.assignments || [], 
-          permissions: userProfile?.permissions || [] 
+          batch: userProfile?.passoutYear?.toString() || '', // Use passoutYear from backend
+          jnv: userProfile?.schoolName || '', // Use schoolName from backend
+          assignments: assignments, // Role assignments based on backend role
+          permissions: permissions // Generated permissions from role
         },
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -173,14 +204,71 @@ class AuthService {
       throw new Error('No authenticated user available')
     }
 
-    const userRecord = findMockUser(user.email)
-    if (!userRecord) {
-      throw new Error('Invalid refresh token')
-    }
+    try {
+      // Call the real API to refresh the token
+      const response = await fetch(`${API_BASE_URL}/api/Auth/refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: token }),
+      })
 
-    const authResponse = buildAuthResponse(userRecord)
-    this.persistAuthResponse(authResponse)
-    return authResponse
+      if (!response.ok) {
+        // If refresh fails, clear storage and throw error
+        this.clearAuthStorage()
+        throw new Error('Session expired. Please login again.')
+      }
+
+      const data = await response.json()
+
+      // Fetch updated user profile
+      let userProfile = null
+      try {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/Users/${data.userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (profileResponse.ok) {
+          userProfile = await profileResponse.json()
+        }
+      } catch (error) {
+        console.warn('Failed to fetch user profile during token refresh:', error)
+      }
+
+      // Build auth response with updated tokens
+      const assignments = userProfile?.role ? createRoleAssignments(userProfile.role) : user.assignments
+      const permissions = buildPermissionGrants(assignments)
+
+      const authResponse: AuthResponse = {
+        user: {
+          userId: data.userId?.toString() || user.userId,
+          email: data.email || userProfile?.emailID || user.email,
+          name: userProfile?.fullName || user.name,
+          avatar: userProfile?.avatar || user.avatar,
+          batch: userProfile?.passoutYear?.toString() || user.batch,
+          jnv: userProfile?.schoolName || user.jnv,
+          assignments: assignments,
+          permissions: permissions
+        },
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresAt: data.expiresAt
+      }
+
+      this.persistAuthResponse(authResponse)
+      return authResponse
+    } catch (error) {
+      this.clearAuthStorage()
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('Failed to refresh authentication token')
+    }
   }
 
   loadUser(): AuthUser | null {

@@ -137,6 +137,12 @@ export function getLandingRoute(user: AuthUser): string {
     (grant) => grant.permission === PERMISSIONS.ADMIN_DASHBOARD_VIEW && grant.scopeType === 'GLOBAL',
   )
 
+  console.log('🔍 getLandingRoute check:', {
+    hasGlobalAdmin,
+    allPermissions: user.permissions,
+    adminPerms: user.permissions.filter(p => p.permission === PERMISSIONS.ADMIN_DASHBOARD_VIEW)
+  })
+
   if (hasGlobalAdmin) {
     return '/admin/dashboard'
   }
