@@ -5,7 +5,7 @@ import type { AuthUser, Permission } from '../auth/auth'
 
 interface AuthContextType {
   user: AuthUser | null
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<AuthUser>
   logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
   isAuthenticated: boolean
@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password)
     setUser(response.user)
+    return response.user
   }
 
   const logout = async () => {
@@ -51,7 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getDefaultLandingRoute = () => {
     if (!user) return '/login'
-    return getLandingRoute(user)
+    const route = getLandingRoute(user)
+    console.log('🎯 Landing Route Debug:', {
+      user: {
+        userId: user.userId,
+        permissions: user.permissions,
+      },
+      route
+    })
+    return route
   }
 
   return (
