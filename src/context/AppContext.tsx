@@ -158,6 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // NOTE: adminRoles and adminUsers are now fetched from API in their respective pages
   // No longer loading from localStorage to avoid conflicts with API data
 
+
   // Load data from localStorage after component mounts
   // useEffect(() => {
   //   try {
