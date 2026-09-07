@@ -379,6 +379,7 @@ export function SignupPage() {
           <form
             onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-2 gap-5"
+            autoComplete="off"
           >
             {/* Full Name */}
             <div>
@@ -511,6 +512,7 @@ export function SignupPage() {
                   maxLength={10}
                   pattern="[0-9]{10}"
                   inputMode="numeric"
+                  autoComplete="tel"
                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="10 digit mobile number"
                 />
@@ -587,6 +589,7 @@ export function SignupPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="Minimum 6 characters"
                 />
