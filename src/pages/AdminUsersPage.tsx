@@ -1,40 +1,90 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Edit3, Trash2, Save, X } from 'lucide-react'
 import type { AdminUser } from '../types'
 import type { RoleName } from '../auth/auth'
 import { useApp } from '../context/AppContext'
 import { Modal } from '../components/Modal'
+import usersService, { type UserProfile } from '../services/usersService'
 
 const roleOptions: RoleName[] = ['SuperAdmin', 'CommunityAdmin', 'EventOrganizer', 'Member']
 
 const emptyUser: AdminUser = {
     id: '',
-    name: '',
+    fullName: '',
     email: '',
+    mobileNumber: '',
+    schoolName: '',
+    state: '',
+    schoolRegion: '',
+    passoutYear: 0,
     role: 'Member',
-    batch: '',
-    jnv: '',
-    profession: '',
-    company: '',
-    city: '',
+    university: '',
+    currentState: '',
+    currentDistrict: '',
+    bloodGroup: '',
+    createdAt: '',
+    updatedAt: '',
 }
 
 export function AdminUsersPage() {
-    const { adminUsers, addAdminUser, updateAdminUser, deleteAdminUser } = useApp()
+    const { addAdminUser, updateAdminUser, deleteAdminUser } = useApp()
     const [search, setSearch] = useState('')
     const [modalOpen, setModalOpen] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
     const [formState, setFormState] = useState<AdminUser>(emptyUser)
+    const [apiUsers, setApiUsers] = useState<UserProfile[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    // Fetch users from API on mount
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setIsLoading(true)
+                setError(null)
+                const users = await usersService.getUserProfiles()
+                setApiUsers(users)
+            } catch (err: any) {
+                console.error('Failed to fetch users:', err)
+                setError(err.message || 'Failed to load users')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchUsers()
+    }, [])
+
+    // Transform API users to AdminUser format
+    const transformedUsers: AdminUser[] = useMemo(() => {
+        return apiUsers.map((user) => ({
+            id: user.userId,
+            fullName: user.fullName || user.emailID,
+            email: user.emailID,
+            mobileNumber: user.mobileNumber || '',
+            schoolName: user.schoolName || '',
+            state: user.state || '',
+            schoolRegion: user.schoolRegion || '',
+            passoutYear: user.passoutYear || 0,
+            role: user.role || 'Member',
+            university: user.university || '',
+            currentState: user.currentState || '',
+            currentDistrict: user.currentDistrict || '',
+            bloodGroup: user.bloodGroup || '',
+            createdAt: '',
+            updatedAt: '',
+        }))
+    }, [apiUsers])
 
     const filteredUsers = useMemo(
         () =>
-            adminUsers.filter((user) =>
-                [user.name, user.email, user.role, user.company, user.city]
+            transformedUsers.filter((user) =>
+                [user.fullName, user.email, user.role, user.schoolName, user.currentState]
                     .join(' ')
                     .toLowerCase()
                     .includes(search.toLowerCase()),
             ),
-        [search, adminUsers],
+        [search, transformedUsers],
     )
 
     const openAddUser = () => {
@@ -60,7 +110,7 @@ export function AdminUsersPage() {
     }
 
     const handleSaveUser = () => {
-        if (!formState.name.trim() || !formState.email.trim()) return
+        if (!formState.fullName.trim() || !formState.email.trim()) return
 
         if (editingId) {
             updateAdminUser(formState)
@@ -138,13 +188,12 @@ export function AdminUsersPage() {
                     <table className="w-full table-fixed divide-y divide-stone-200 text-left text-sm">
 
                         <colgroup>
-                            <col className="w-[15%]" />
                             <col className="w-[18%]" />
-                            <col className="w-[13%]" />
+                            <col className="w-[20%]" />
+                            <col className="w-[12%]" />
                             <col className="w-[8%]" />
-                            <col className="w-[10%]" />
-                            <col className="w-[13%]" />
-                            <col className="w-[9%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[14%]" />
                             <col className="w-[14%]" />
                         </colgroup>
 
@@ -169,15 +218,11 @@ export function AdminUsersPage() {
                                 </th>
 
                                 <th className="px-4 py-3 font-semibold text-stone-600">
-                                    JNV
+                                    School
                                 </th>
 
                                 <th className="px-4 py-3 font-semibold text-stone-600">
-                                    Company
-                                </th>
-
-                                <th className="px-4 py-3 font-semibold text-stone-600">
-                                    City
+                                    University
                                 </th>
 
                                 <th className="px-4 py-3 text-center font-semibold text-stone-600">
@@ -190,10 +235,28 @@ export function AdminUsersPage() {
                         {/* Body */}
                         <tbody className="divide-y divide-stone-200 bg-white">
 
-                            {filteredUsers.length === 0 ? (
+                            {isLoading ? (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={7}
+                                        className="px-4 py-10 text-center text-sm text-stone-500"
+                                    >
+                                        Loading users...
+                                    </td>
+                                </tr>
+                            ) : error ? (
+                                <tr>
+                                    <td
+                                        colSpan={7}
+                                        className="px-4 py-10 text-center text-sm text-red-600"
+                                    >
+                                        {error}
+                                    </td>
+                                </tr>
+                            ) : filteredUsers.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={7}
                                         className="px-4 py-10 text-center text-sm text-stone-500"
                                     >
                                         No users found.
@@ -210,9 +273,9 @@ export function AdminUsersPage() {
                                         <td className="px-4 py-3">
                                             <div
                                                 className="truncate font-medium text-stone-900"
-                                                title={user.name}
+                                                title={user.fullName}
                                             >
-                                                {user.name}
+                                                {user.fullName}
                                             </div>
                                         </td>
 
@@ -252,7 +315,7 @@ export function AdminUsersPage() {
                                         {/* Batch */}
                                         <td className="px-4 py-3 text-stone-600">
                                             <div className="truncate">
-                                                {user.batch || '-'}
+                                                {user.passoutYear || '-'}
                                             </div>
                                         </td>
 
@@ -260,9 +323,9 @@ export function AdminUsersPage() {
                                         <td className="px-4 py-3 text-stone-600">
                                             <div
                                                 className="truncate"
-                                                title={user.jnv}
+                                                title={user.schoolName}
                                             >
-                                                {user.jnv || '-'}
+                                                {user.schoolName || '-'}
                                             </div>
                                         </td>
 
@@ -270,9 +333,9 @@ export function AdminUsersPage() {
                                         <td className="px-4 py-3 text-stone-600">
                                             <div
                                                 className="truncate"
-                                                title={user.company}
+                                                title={user.university}
                                             >
-                                                {user.company || '-'}
+                                                {user.university || '-'}
                                             </div>
                                         </td>
 
@@ -280,9 +343,9 @@ export function AdminUsersPage() {
                                         <td className="px-4 py-3 text-stone-600">
                                             <div
                                                 className="truncate"
-                                                title={user.city}
+                                                title={user.currentState}
                                             >
-                                                {user.city || '-'}
+                                                {user.currentState || '-'}
                                             </div>
                                         </td>
 
@@ -349,8 +412,8 @@ export function AdminUsersPage() {
                         <label className="mb-2 block text-sm font-medium text-stone-700">Name</label>
                         <input
                             type="text"
-                            value={formState.name}
-                            onChange={(e) => handleFormChange('name', e.target.value)}
+                            value={formState.fullName}
+                            onChange={(e) => handleFormChange('fullName', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>
@@ -381,11 +444,11 @@ export function AdminUsersPage() {
                         </select>
                     </div>
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-stone-700">Batch</label>
+                        <label className="mb-2 block text-sm font-medium text-stone-700">Batch Year</label>
                         <input
-                            type="text"
-                            value={formState.batch}
-                            onChange={(e) => handleFormChange('batch', e.target.value)}
+                            type="number"
+                            value={formState.passoutYear}
+                            onChange={(e) => handleFormChange('passoutYear', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>
@@ -393,20 +456,20 @@ export function AdminUsersPage() {
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-stone-700">JNV</label>
+                        <label className="mb-2 block text-sm font-medium text-stone-700">School Name</label>
                         <input
                             type="text"
-                            value={formState.jnv}
-                            onChange={(e) => handleFormChange('jnv', e.target.value)}
+                            value={formState.schoolName}
+                            onChange={(e) => handleFormChange('schoolName', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-stone-700">City</label>
+                        <label className="mb-2 block text-sm font-medium text-stone-700">Current State</label>
                         <input
                             type="text"
-                            value={formState.city}
-                            onChange={(e) => handleFormChange('city', e.target.value)}
+                            value={formState.currentState}
+                            onChange={(e) => handleFormChange('currentState', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>
@@ -414,20 +477,20 @@ export function AdminUsersPage() {
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-stone-700">Profession</label>
+                        <label className="mb-2 block text-sm font-medium text-stone-700">University</label>
                         <input
                             type="text"
-                            value={formState.profession}
-                            onChange={(e) => handleFormChange('profession', e.target.value)}
+                            value={formState.university}
+                            onChange={(e) => handleFormChange('university', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-stone-700">Company</label>
+                        <label className="mb-2 block text-sm font-medium text-stone-700">Mobile Number</label>
                         <input
                             type="text"
-                            value={formState.company}
-                            onChange={(e) => handleFormChange('company', e.target.value)}
+                            value={formState.mobileNumber}
+                            onChange={(e) => handleFormChange('mobileNumber', e.target.value)}
                             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:bg-white"
                         />
                     </div>

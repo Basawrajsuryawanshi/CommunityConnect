@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AppProvider } from './context/AppContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -34,6 +35,20 @@ import { AdminCommunitiesPage } from './pages/AdminCommunitiesPage'
 import { AdminSettingsPage } from './pages/AdminSettingsPage'
 
 export default function App() {
+  // Clear old mock data from localStorage on first load
+  useEffect(() => {
+    const hasCleared = sessionStorage.getItem('mock-data-cleared')
+    if (!hasCleared) {
+      // Clear mock data localStorage keys
+      const mockDataKeys = ['cc-admin-users', 'cc-admin-roles']
+      mockDataKeys.forEach(key => {
+        localStorage.removeItem(key)
+      })
+      sessionStorage.setItem('mock-data-cleared', 'true')
+      console.log('✓ Cleared mock data from localStorage')
+    }
+  }, [])
+
   return (
     <AuthProvider>
       <AppProvider>

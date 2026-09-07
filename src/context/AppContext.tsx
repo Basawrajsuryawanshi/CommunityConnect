@@ -155,28 +155,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [announcements] = useState<Announcement[]>(initialAnnouncements)
   const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions)
 
-  // Load data from localStorage after component mounts
-  useEffect(() => {
-    try {
-      const loadedAdminUsers = loadLocalData('cc-admin-users', initialAdminUsers)
-      if (loadedAdminUsers !== initialAdminUsers) {
-        setAdminUsers(loadedAdminUsers)
-      }
-    } catch (error) {
-      // Silently handle localStorage access errors
-    }
-  }, [])
+  // NOTE: adminRoles and adminUsers are now fetched from API in their respective pages
+  // No longer loading from localStorage to avoid conflicts with API data
 
-  useEffect(() => {
-    try {
-      const loadedAdminRoles = loadLocalData('cc-admin-roles', initialAdminRoles)
-      if (loadedAdminRoles !== initialAdminRoles) {
-        setAdminRoles(loadedAdminRoles)
-      }
-    } catch (error) {
-      // Silently handle localStorage access errors
-    }
-  }, [])
+
+  // Load data from localStorage after component mounts
+  // useEffect(() => {
+  //   try {
+  //     const loadedAdminUsers = loadLocalData('cc-admin-users', initialAdminUsers)
+  //     if (loadedAdminUsers !== initialAdminUsers) {
+  //       setAdminUsers(loadedAdminUsers)
+  //     }
+  //   } catch (error) {
+  //     // Silently handle localStorage access errors
+  //   }
+  // }, [])
+
+  // useEffect(() => {
+  //   try {
+  //     const loadedAdminRoles = loadLocalData('cc-admin-roles', initialAdminRoles)
+  //     if (loadedAdminRoles !== initialAdminRoles) {
+  //       setAdminRoles(loadedAdminRoles)
+  //     }
+  //   } catch (error) {
+  //     // Silently handle localStorage access errors
+  //   }
+  // }, [])
 
   useEffect(() => {
     try {
@@ -201,25 +205,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Persist data to localStorage when it changes
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        localStorage.setItem('cc-admin-users', JSON.stringify(adminUsers))
-      }
-    } catch (error) {
-      // Silently handle localStorage access errors
-    }
-  }, [adminUsers])
+  // NOTE: adminRoles and adminUsers are now managed via API, not localStorage
+  // useEffect(() => {
+  //   try {
+  //     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  //       localStorage.setItem('cc-admin-users', JSON.stringify(adminUsers))
+  //     }
+  //   } catch (error) {
+  //     // Silently handle localStorage access errors
+  //   }
+  // }, [adminUsers])
 
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        localStorage.setItem('cc-admin-roles', JSON.stringify(adminRoles))
-      }
-    } catch (error) {
-      // Silently handle localStorage access errors
-    }
-  }, [adminRoles])
+  // useEffect(() => {
+  //   try {
+  //     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  //       localStorage.setItem('cc-admin-roles', JSON.stringify(adminRoles))
+  //     }
+  //   } catch (error) {
+  //     // Silently handle localStorage access errors
+  //   }
+  // }, [adminRoles])
 
   useEffect(() => {
     try {

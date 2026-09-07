@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Save, X, Trash2, Edit3 } from 'lucide-react'
 import type { AdminRole } from '../types'
-import { useApp } from '../context/AppContext'
 import { Modal } from '../components/Modal'
+import roleService from '../services/roleService'
 
 const emptyRole: AdminRole = {
   id: '',
@@ -11,27 +11,42 @@ const emptyRole: AdminRole = {
 }
 
 export function AdminRolesPage() {
-  const {
-    adminRoles,
-    addAdminRole,
-    updateAdminRole,
-    deleteAdminRole,
-  } = useApp()
-
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formState, setFormState] = useState<AdminRole>(emptyRole)
+  const [apiRoles, setApiRoles] = useState<AdminRole[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch roles from API on mount
+  useEffect(() => {
+    fetchRoles()
+  }, [])
+
+  const fetchRoles = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const roles = await roleService.getAllRoles()
+      setApiRoles(roles)
+    } catch (err: any) {
+      console.error('Failed to fetch roles:', err)
+      setError(err.message || 'Failed to load roles')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredRoles = useMemo(
     () =>
-      adminRoles.filter((role) =>
+      apiRoles.filter((role) =>
         [role.name, role.description]
           .join(' ')
           .toLowerCase()
           .includes(search.toLowerCase()),
       ),
-    [adminRoles, search],
+    [apiRoles, search],
   )
 
   const openAddRole = () => {
@@ -65,7 +80,7 @@ export function AdminRolesPage() {
     }))
   }
 
-  const handleSaveRole = () => {
+  const handleSaveRole = async () => {
     if (
       !formState.name.trim() ||
       !formState.description.trim()
@@ -73,21 +88,55 @@ export function AdminRolesPage() {
       return
     }
 
-    if (editingId) {
-      updateAdminRole(formState)
-    } else {
-      addAdminRole(formState)
-    }
+    try {
+      if (editingId) {
+        // Update existing role
+        await roleService.updateRole(editingId, formState.name, formState.description)
+      } else {
+        // Create new role
+        await roleService.createRole(formState.name, formState.description)
+      }
 
-    closeModal()
+      // Refresh the roles list
+      await fetchRoles()
+      closeModal()
+    } catch (err: any) {
+      console.error('Failed to save role:', err)
+      setError(err.message || 'Failed to save role')
+    }
   }
 
-  const handleDeleteRole = (roleId: string) => {
-    deleteAdminRole(roleId)
+  const handleDeleteRole = async (roleId: string) => {
+    try {
+      await roleService.deleteRole(roleId)
+      // Refresh the roles list
+      await fetchRoles()
+    } catch (err: any) {
+      console.error('Failed to delete role:', err)
+      setError(err.message || 'Failed to delete role')
+    }
   }
 
   return (
     <div className="w-full min-w-0 space-y-6">
+
+      {/* ================================================= */}
+      {/* ERROR ALERT */}
+      {/* ================================================= */}
+
+      {error && (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-800">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ================================================= */}
       {/* PAGE HEADER */}
@@ -197,7 +246,29 @@ export function AdminRolesPage() {
             {/* Table Body */}
             <tbody className="divide-y divide-stone-200 bg-white">
 
-              {filteredRoles.length === 0 ? (
+              {isLoading ? (
+
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-6 py-12 text-center text-sm text-stone-500"
+                  >
+                    Loading roles...
+                  </td>
+                </tr>
+
+              ) : error ? (
+
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-6 py-12 text-center text-sm text-red-600"
+                  >
+                    {error}
+                  </td>
+                </tr>
+
+              ) : filteredRoles.length === 0 ? (
 
                 <tr>
                   <td

@@ -8,7 +8,6 @@ import {
     Activity,
     ArrowUpRight,
     ArrowRight,
-    Plus,
     Settings,
     FileText,
     CheckCircle2,
